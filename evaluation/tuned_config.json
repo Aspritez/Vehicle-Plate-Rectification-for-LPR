@@ -1,0 +1,13 @@
+{
+  "content_proposals": true,
+  "max_candidates": 24,
+  "max_proposal_reviews": 250,
+  "min_aspect": 0.25,
+  "canonical_text_aspect": true,
+  "neutral_proposals": true,
+  "appearance_weight": 0.25,
+  "min_contrast": 55,
+  "min_neutral": 0.25,
+  "min_main_height": 0.22,
+  "min_score": 0.9
+}
