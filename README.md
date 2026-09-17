@@ -1,6 +1,6 @@
 # Thai License Plate Deskew
 
-เว็บแอป Streamlit สำหรับเลือกตำแหน่งป้ายทะเบียน 4 จุด ปรับมุมภาพป้ายด้วย Perspective Transform และเพิ่มความคมชัดด้วย OpenCV
+เว็บแอป Streamlit สำหรับเลือกตำแหน่งป้ายทะเบียน 4 จุด ปรับมุมภาพป้ายด้วย Perspective Transform เพิ่มความคมชัดด้วย OpenCV และอ่านข้อความภาษาไทยด้วย OCR
 
 แอปไม่มีฐานข้อมูล ไม่เก็บไฟล์อัปโหลด และเก็บจุดที่ผู้ใช้เลือกไว้เฉพาะระหว่างเปิดหน้าเว็บนั้น
 
@@ -10,7 +10,19 @@
 - ค้นหาตำแหน่งป้ายอัตโนมัติ หรือคลิกเลือกมุมป้าย 4 จุดด้วยตนเอง
 - ป้องกันจุดซ้ำ รูปสี่เหลี่ยมผิดรูป และการตัดภาพที่ไม่ถูกต้อง
 - แสดงภาพต้นฉบับพร้อมกรอบ และภาพป้ายที่ปรับมุมแล้ว
+- อ่านเลขทะเบียนและจังหวัดหลัง Deskew ด้วย EasyOCR
+- แยกบรรทัดเลขทะเบียน/จังหวัด และเทียบชื่อจังหวัดกับรายชื่อ 77 จังหวัด
+- แสดง OCR confidence และแจ้งเตือนเมื่อมีการแก้คำหรือควรตรวจสอบด้วยคน
 - ดาวน์โหลดภาพผลลัพธ์เป็น PNG
+
+## ขั้นตอน OCR
+
+`ป้ายหลัง Homography → ขยายภาพ 4 เท่า → CLAHE / Sharpen → แยก 2 บรรทัด → EasyOCR → Province Dictionary`
+
+- OCR ทำงานหลังผู้ใช้ตรวจยืนยันกรอบป้ายแล้ว เพื่อลดการอ่านข้อความจากบริเวณผิด
+- ชื่อจังหวัดที่ OCR อ่านคลาดเคลื่อนจะเทียบกับรายชื่อจังหวัดไทยด้วย string similarity
+- การแก้ชื่อจังหวัดเป็นคำแนะนำ ไม่ใช่หลักฐานว่าข้อความถูกต้อง ระบบจะแสดงสถานะและ confidence ให้ตรวจสอบกับภาพ
+- ครั้งแรกที่กด OCR อาจใช้เวลานานขึ้นเพื่อโหลดโมเดลภาษาไทย และการรันบน CPU จะช้ากว่า GPU
 
 ## ขั้นตอนตรวจจับอัตโนมัติ
 
@@ -89,6 +101,7 @@ Community Cloud จะติดตั้งไลบรารีจาก `requi
 app.py                  Streamlit application
 _environment.py         ตรวจสอบ runtime (local / Community Cloud)
 plate_detection.py      candidate scoring and contour / ROI corner detection
+plate_ocr.py            Thai OCR preprocessing, normalization and province correction
 tests/                  synthetic image regression tests
 requirements.txt        dependencies สำหรับ Streamlit Community Cloud (headless OpenCV)
 requirements-local.txt  dependencies สำหรับ local (full OpenCV)

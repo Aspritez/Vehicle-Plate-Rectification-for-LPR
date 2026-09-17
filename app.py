@@ -14,6 +14,7 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 
 from _environment import IS_STREAMLIT_CLOUD, runtime_info
 from plate_detection import DATASET_CONFIG, DEFAULT_CONFIG, auto_detect_plate, detect_plate, order_points, validate_quadrilateral
+from plate_ocr import read_plate
 
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
@@ -91,6 +92,14 @@ def image_as_png(image_bgr: np.ndarray) -> bytes:
     buffer = io.BytesIO()
     Image.fromarray(cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)).save(buffer, format="PNG")
     return buffer.getvalue()
+
+
+@st.cache_resource(show_spinner=False)
+def load_ocr_reader():
+    """Load the Thai/English OCR model once per Streamlit process."""
+    import easyocr
+
+    return easyocr.Reader(["th", "en"], gpu=False)
 
 
 def resize_for_detection(image_bgr: np.ndarray) -> tuple[np.ndarray, float, float]:
@@ -269,3 +278,50 @@ with action_col:
     st.subheader("ภาพป้ายที่ปรับมุมแล้ว")
     st.image(cv2.cvtColor(enhanced, cv2.COLOR_BGR2RGB), width="stretch")
     st.download_button("📥 ดาวน์โหลดภาพ PNG", data=image_as_png(enhanced), file_name="license_plate_deskewed.png", mime="image/png", width="stretch")
+
+    st.subheader("อ่านข้อความบนป้ายทะเบียน")
+    st.caption("OCR ทำงานหลัง Deskew แล้ว ครั้งแรกอาจใช้เวลาสักครู่เพื่อโหลดโมเดลภาษาไทย")
+    if st.button("🔤 อ่านเลขทะเบียนและจังหวัด", width="stretch"):
+        try:
+            with st.spinner("กำลังอ่านข้อความบนป้ายทะเบียน..."):
+                ocr_result, ocr_enhanced, number_region, province_region = read_plate(
+                    enhanced,
+                    load_ocr_reader(),
+                )
+        except Exception as error:
+            st.error(f"OCR ไม่สามารถประมวลผลภาพนี้ได้: {error}")
+        else:
+            number_value = ocr_result.registration or "อ่านไม่ได้"
+            province_value = ocr_result.province or "ต้องตรวจสอบด้วยตนเอง"
+            number_column, province_column = st.columns(2)
+            number_column.metric(
+                "เลขทะเบียน",
+                number_value,
+                help=f"OCR ดิบ: {ocr_result.registration_raw or '-'}",
+            )
+            province_column.metric(
+                "จังหวัด",
+                province_value,
+                help=f"OCR ดิบ: {ocr_result.province_raw or '-'}",
+            )
+
+            if ocr_result.province_status == "dictionary_correction":
+                st.warning(
+                    "ชื่อจังหวัดถูกแก้ด้วยรายชื่อ 77 จังหวัด "
+                    f"(ความคล้าย {ocr_result.province_similarity:.0%}) กรุณาตรวจสอบกับภาพ"
+                )
+            elif ocr_result.province_status in ("human_review", "low_confidence"):
+                st.warning("OCR จังหวัดมีความมั่นใจต่ำ กรุณาตรวจสอบด้วยตนเอง")
+            else:
+                st.success("OCR อ่านจังหวัดตรงกับรายชื่อจังหวัด")
+
+            st.caption(
+                f"ความมั่นใจเลขทะเบียน {ocr_result.registration_confidence:.0%} · "
+                f"ความมั่นใจจังหวัด {ocr_result.province_confidence:.0%}"
+            )
+
+            with st.expander("ดูภาพที่ส่งเข้า OCR"):
+                preview_columns = st.columns(3)
+                preview_columns[0].image(ocr_enhanced, caption="Enhanced", width="stretch")
+                preview_columns[1].image(number_region, caption="เลขทะเบียน", width="stretch")
+                preview_columns[2].image(province_region, caption="จังหวัด", width="stretch")
