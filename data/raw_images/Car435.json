@@ -1,0 +1,40 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "license_plate",
+      "score": null,
+      "points": [
+        [
+          120.32227488151659,
+          101.36492890995261
+        ],
+        [
+          296.6255924170616,
+          140.22748815165878
+        ],
+        [
+          338.80568720379154,
+          243.07109004739337
+        ],
+        [
+          176.72037914691944,
+          201.3649289099526
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "polygon",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "Car435.jpg",
+  "imageData": null,
+  "imageHeight": 416,
+  "imageWidth": 416
+}

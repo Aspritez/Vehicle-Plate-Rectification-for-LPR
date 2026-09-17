@@ -1,0 +1,30 @@
+# Executables and large binaries (>100MB)
+*.exe
+X-AnyLabeling-CUDA13.exe
+
+# Sub-repositories and external tools
+X-AnyLabeling/
+
+# Training checkpoints and intermediate runs
+runs/
+
+# Python cache and environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+ENV/
+
+# IDE and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Gemini/Antigravity metadata
+.gemini/
+.agents/

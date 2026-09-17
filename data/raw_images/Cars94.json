@@ -1,0 +1,40 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "license_plate",
+      "score": null,
+      "points": [
+        [
+          178.88198757763973,
+          209.81055900621118
+        ],
+        [
+          247.82608695652172,
+          207.9472049689441
+        ],
+        [
+          249.06832298136644,
+          248.3198757763975
+        ],
+        [
+          178.88198757763973,
+          252.66770186335407
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "polygon",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "Cars94.png",
+  "imageData": null,
+  "imageHeight": 319,
+  "imageWidth": 400
+}
