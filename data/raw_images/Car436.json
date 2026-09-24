@@ -1,0 +1,40 @@
+{
+  "version": "4.0.6",
+  "flags": {},
+  "checked": false,
+  "shapes": [
+    {
+      "label": "license_plate",
+      "score": null,
+      "points": [
+        [
+          285.77777777777777,
+          228.88888888888889
+        ],
+        [
+          280.44444444444446,
+          167.11111111111111
+        ],
+        [
+          349.77777777777777,
+          244.44444444444446
+        ],
+        [
+          352.0,
+          304.0
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "polygon",
+      "flags": {},
+      "attributes": {},
+      "kie_linking": []
+    }
+  ],
+  "imagePath": "Car436.jpg",
+  "imageData": null,
+  "imageHeight": 640,
+  "imageWidth": 640
+}
