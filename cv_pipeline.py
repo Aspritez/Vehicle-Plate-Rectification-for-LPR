@@ -219,3 +219,26 @@ def rectify_plate(
     except Exception as exc:
         print(f"[rectify_plate] {exc}")
         return image.copy()
+
+def enhance_plate_for_ocr(cropped_plate: np.ndarray) -> np.ndarray:
+    """
+    Enhances contrast and sharpens blurred license plates for OCR processing.
+    """
+    # Convert to Grayscale
+    if len(cropped_plate.shape) == 3:
+        gray = cv2.cvtColor(cropped_plate, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = cropped_plate.copy()
+
+    # 1. CLAHE - Adaptive Local Contrast Enhancement
+    clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+    contrast = clahe.apply(gray)
+
+    # 2. Unsharp Masking to restore blurred edges
+    blurred = cv2.GaussianBlur(contrast, (0, 0), sigmaX=3)
+    sharpened = cv2.addWeighted(contrast, 1.5, blurred, -0.5, 0)
+
+    # 3. Denoise slightly while preserving sharp edges
+    denoised = cv2.bilateralFilter(sharpened, d=5, sigmaColor=50, sigmaSpace=50)
+
+    return denoised

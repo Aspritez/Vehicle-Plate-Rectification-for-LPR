@@ -18,7 +18,8 @@ from cv_pipeline import (
     detect_plate_corners,
     rectify_plate,
     validate_quadrilateral,
-    order_points
+    order_points,
+    enhance_plate_for_ocr
 )
 
 # ── Page config ─────────────────────────────────────────────────────────────
@@ -313,12 +314,15 @@ if "corners" not in st.session_state:
     st.session_state.corners = None
 if "rectified" not in st.session_state:
     st.session_state.rectified = None
+if "enhanced" not in st.session_state:
+    st.session_state.enhanced = None
 
 def _clear():
     st.session_state.pil_image = None
     st.session_state.cv_image = None
     st.session_state.corners = None
     st.session_state.rectified = None
+    st.session_state.enhanced = None
 
 def pil_to_cv(img: Image.Image) -> np.ndarray:
     return cv2.cvtColor(np.array(img.convert("RGB")), cv2.COLOR_RGB2BGR)
@@ -385,28 +389,45 @@ else:
     col_btn, col_out = st.columns(2)
     
     with col_btn:
-        st.markdown("### 1. Deskew Plate")
+        st.markdown("### 1. Deskew & Enhance")
         is_valid, val_msg = validate_quadrilateral(st.session_state.corners, st.session_state.cv_image.shape)
         
         if is_valid:
             if st.button("**Rectify Plate**", use_container_width=True, type="primary"):
-                # Simply call rectify_plate with the exact current corners from session state
-                out = rectify_plate(st.session_state.cv_image, st.session_state.corners, output_width=400, output_height=130)
+                # 1. Rectify (Deskew)
+                out = rectify_plate(
+                    st.session_state.cv_image, 
+                    st.session_state.corners, 
+                    output_width=400, 
+                    output_height=130
+                )
                 st.session_state.rectified = out
+                
+                # 2. Enhance for OCR
+                st.session_state.enhanced = enhance_plate_for_ocr(out)
         else:
             st.error(val_msg)
 
     with col_out:
         st.markdown("### 2. Output")
         if st.session_state.rectified is not None:
-            st.image(cv_to_pil(st.session_state.rectified), use_container_width=True)
+            show_enhanced = st.toggle("Apply OCR Sharpness & Contrast", value=True)
+        
+            display_img = (
+                st.session_state.enhanced 
+                if show_enhanced and st.session_state.enhanced is not None 
+                else st.session_state.rectified
+            )
+
+            st.image(cv_to_pil(display_img), use_container_width=True)
             
+            # Download button
             buf = io.BytesIO()
-            cv_to_pil(st.session_state.rectified).save(buf, format="PNG")
+            cv_to_pil(display_img).save(buf, format="PNG")
             st.download_button(
                 "Download Result",
                 data=buf.getvalue(),
-                file_name="rectified_plate.png",
+                file_name="enhanced_plate.png",
                 mime="image/png",
                 use_container_width=True
             )
