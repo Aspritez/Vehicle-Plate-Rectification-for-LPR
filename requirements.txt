@@ -2,7 +2,6 @@
 # CPU-only PyTorch: the default Linux wheel pulls in gigabytes of CUDA libraries.
 --extra-index-url https://download.pytorch.org/whl/cpu
 streamlit==1.64.0
-streamlit-image-coordinates==0.4.1
 torch==2.11.0
 torchvision==0.26.0
 numpy==2.5.2

@@ -2,6 +2,7 @@ class LicensePlateApp {
     constructor() {
         this.currentImage = null;
         this.currentImageBase64 = null;
+        this.currentFileName = 'image';
         this.currentResult = null;
         this.corners = null;
         this.canvasViewer = null;
@@ -50,6 +51,8 @@ class LicensePlateApp {
         document.getElementById('editBtn').addEventListener('click', () => this.openEditModal());
         document.getElementById('resetCornersBtn').addEventListener('click', () => this.resetCorners());
         document.getElementById('applyCornersBtn').addEventListener('click', () => this.applyCornersChange());
+        document.getElementById('downloadStageBtn').addEventListener('click', () => this.downloadStage());
+        document.getElementById('downloadZipBtn').addEventListener('click', () => this.downloadZip());
 
         // Webcam
         document.getElementById('captureBtn').addEventListener('click', () => this.captureWebcam());
@@ -73,6 +76,8 @@ class LicensePlateApp {
 
     async handleFileSelect(file) {
         if (!file) return;
+
+        this.currentFileName = file.name || 'image';
 
         const reader = new FileReader();
         reader.onload = async (e) => {
@@ -123,6 +128,8 @@ class LicensePlateApp {
     }
 
     displayResults(result) {
+        this.currentResult = result;
+        document.getElementById('downloadZipBtn').disabled = false;
         const processingCard = document.getElementById('processingCard');
 
         document.getElementById('plateText').textContent = result.ocr_result.text || '-';
@@ -155,6 +162,41 @@ class LicensePlateApp {
         document.getElementById('dragDropZone').innerHTML =
             '<p style="color: #28a745;">✓ Image loaded successfully</p>';
     }
+
+    fileStem() {
+        return (this.currentFileName || 'image').replace(/\.[^.]+$/, '');
+    }
+
+    // Save the image that is currently shown in the pipeline inspector.
+    downloadStage() {
+        const step = pipelineViewer.currentStep;
+        const decoded = pipelineViewer.images[step] && ZipTools.decodeDataUrl(pipelineViewer.images[step]);
+        if (!decoded) return;
+        const name = step === 'original' ? this.currentFileName : `${this.fileStem()}_${step}.${decoded.ext}`;
+        ZipTools.save(new Blob([decoded.bytes], { type: decoded.mime }), name);
+    }
+
+    // Save every stage (original, detected, deskewed, enhanced) and the result as one zip.
+    downloadZip() {
+        const stem = this.fileStem();
+        const files = [];
+        ['original', 'detected', 'deskewed', 'enhanced'].forEach((step) => {
+            const decoded = pipelineViewer.images[step] && ZipTools.decodeDataUrl(pipelineViewer.images[step]);
+            if (decoded) {
+                files.push({
+                    name: step === 'original' ? this.currentFileName : `${stem}_${step}.${decoded.ext}`,
+                    data: decoded.bytes,
+                });
+            }
+        });
+        const result = this.currentResult;
+        if (result && result.ocr_result) {
+            const text = JSON.stringify(Object.assign({}, result.ocr_result, { corners: result.corners }), null, 2);
+            files.push({ name: `${stem}_result.json`, data: new TextEncoder().encode(text) });
+        }
+        ZipTools.save(ZipTools.makeZip(files), `${stem}_pipeline.zip`);
+    }
+
 
     showCornerAdjustment(corners) {
         document.getElementById('cornerAdjustSection').style.display = 'flex';

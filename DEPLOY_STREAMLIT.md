@@ -3,16 +3,17 @@
 ## ไฟล์ที่เกี่ยวข้อง
 | ไฟล์ | หน้าที่ |
 |---|---|
-| `streamlit_app.py` | หน้าแอป: อัปโหลด/ภาพตัวอย่าง → หาป้ายอัตโนมัติ → วาดกรอบรอบป้าย (หรือพิมพ์ 4 มุม) → ผลลัพธ์ |
+| `streamlit_app.py` | ตัวเชื่อม Python: ฝังหน้าเว็บต้นฉบับ (`frontend/`) เป็น component ของ Streamlit หน้าเว็บส่งคำขอ (อัปโหลด/ลากกรอบ/ลากมุม) มาที่นี่แทน HTTP แล้วรับผลกลับเป็น JSON เดียวกับ FastAPI |
+| `frontend/` | **GUI ตัวเดียวกับเวอร์ชัน FastAPI** (หน้าเดียว 3 คอลัมน์): พื้นที่ crop มืดลงสดตอนลากค้าง พร้อมขนาดเป็นพิกเซล, ลากจุดมุม 4 จุดได้, ปุ่มดาวน์โหลดทุกขั้นของ pipeline (ทีละภาพ หรือ zip เดียว) |
 | `backend/app/pipeline.py` | ตรรกะอ่านป้าย (ใช้ร่วมกับ FastAPI `routes.py`) |
 | `requirements.txt`, `packages.txt` | แพ็กเกจ Python (torch แบบ CPU) และแพ็กเกจระบบ |
 | `.streamlit/config.toml` | จำกัดอัปโหลด 10 MB, ปิดการส่งสถิติ |
-| `samples/` | ภาพตัวอย่างป้ายไทย 3 ภาพ (ให้ผู้ตรวจกดลองได้เลย) |
+| `samples/` | ภาพตัวอย่างป้ายไทย 2 ภาพ ให้ดาวน์โหลดไปลองอัปโหลด (GUI ไม่มีตัวเลือกตัวอย่างในหน้า) |
 | `backend/app/models/` | `plate_locator.joblib` (84 MB, 100 ต้นไม้) และ `RealESRGAN_x4plus.pth` (67 MB) เป็นไฟล์ git ธรรมดา **ไม่ใช้ Git LFS** |
 
 ## รันในเครื่องก่อน
 ```bash
-pip install streamlit==1.64.0 streamlit-image-coordinates==0.4.1
+pip install streamlit==1.64.0
 streamlit run streamlit_app.py
 ```
 (เครื่องที่มีแพ็กเกจของโปรเจกต์ครบอยู่แล้ว ไม่ต้องติดตั้ง `requirements.txt` ทั้งไฟล์)

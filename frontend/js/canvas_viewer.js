@@ -191,16 +191,56 @@ class CanvasViewer {
         }
 
         if (this.drawRect) {
-            const r = this.drawRect;
-            const unit = this.displayScale();
-            this.ctx.fillStyle = 'rgba(255, 138, 61, 0.18)';
-            this.ctx.fillRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0);
-            this.ctx.strokeStyle = '#ff8a3d';
-            this.ctx.lineWidth = 2 * unit;
-            this.ctx.setLineDash([6 * unit, 4 * unit]);
-            this.ctx.strokeRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0);
-            this.ctx.setLineDash([]);
+            this.drawCropArea(this.drawRect);
         }
+    }
+
+    // The crop box being dragged: everything outside it is dimmed, with a dashed outline, corner ticks
+    // and the size in image pixels, so the selected area is obvious while the mouse is still down.
+    drawCropArea(r) {
+        const ctx = this.ctx;
+        const unit = this.displayScale();
+        const w = r.x1 - r.x0;
+        const h = r.y1 - r.y0;
+
+        ctx.fillStyle = 'rgba(16, 20, 34, 0.58)';
+        ctx.beginPath();
+        ctx.rect(0, 0, this.canvas.width, this.canvas.height);
+        ctx.rect(r.x0, r.y0, w, h);
+        ctx.fill('evenodd');
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.lineWidth = 1.5 * unit;
+        ctx.setLineDash([7 * unit, 5 * unit]);
+        ctx.strokeRect(r.x0, r.y0, w, h);
+        ctx.setLineDash([]);
+
+        ctx.strokeStyle = '#ff8a3d';
+        ctx.lineWidth = 3 * unit;
+        const tick = Math.min(16 * unit, w / 3, h / 3);
+        [[r.x0, r.y0, 1, 1], [r.x1, r.y0, -1, 1], [r.x1, r.y1, -1, -1], [r.x0, r.y1, 1, -1]].forEach(([x, y, sx, sy]) => {
+            ctx.beginPath();
+            ctx.moveTo(x + sx * tick, y);
+            ctx.lineTo(x, y);
+            ctx.lineTo(x, y + sy * tick);
+            ctx.stroke();
+        });
+
+        const text = `${Math.round(w)} × ${Math.round(h)} px`;
+        ctx.font = `600 ${12 * unit}px Inter, Arial, sans-serif`;
+        const padX = 7 * unit;
+        const boxW = ctx.measureText(text).width + 2 * padX;
+        const boxH = 22 * unit;
+        const lx = Math.min(Math.max(r.x0, 4 * unit), this.canvas.width - boxW - 4 * unit);
+        const ly = r.y0 - boxH - 6 * unit < 4 * unit ? r.y0 + 6 * unit : r.y0 - boxH - 6 * unit;
+        ctx.fillStyle = 'rgba(43, 47, 59, 0.92)';
+        ctx.beginPath();
+        ctx.roundRect(lx, ly, boxW, boxH, boxH / 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'left';
+        ctx.fillText(text, lx + padX, ly + boxH / 2 + unit * 0.5);
     }
 }
 
@@ -227,7 +267,7 @@ class PipelineViewer {
     }
 
     setAllImages(data) {
-        if (data.visualization_base64) this.setImage('original', data.visualization_base64);
+        // 'original' stays the uploaded image; 'detected' is the same image with the plate outlined
         if (data.visualization_base64) this.setImage('detected', data.visualization_base64);
         if (data.deskewed_plate_base64) this.setImage('deskewed', data.deskewed_plate_base64);
         if (data.enhanced_plate_base64) this.setImage('enhanced', data.enhanced_plate_base64);
@@ -236,6 +276,11 @@ class PipelineViewer {
     display() {
         const img = document.getElementById('pipelineImage');
         const info = document.getElementById('pipelineInfo');
+        const download = document.getElementById('downloadStageBtn');
+        if (download) {
+            download.textContent = `Download ${this.currentStep}`;
+            download.disabled = !this.images[this.currentStep];
+        }
 
         if (this.images[this.currentStep]) {
             img.src = this.images[this.currentStep];

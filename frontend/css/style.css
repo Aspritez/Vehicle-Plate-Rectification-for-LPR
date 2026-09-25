@@ -686,3 +686,16 @@ body {
         min-height: 280px;
     }
 }
+
+/* ---------- Pipeline downloads ---------- */
+.dl-row {
+    flex: none;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.dl-row .btn {
+    text-transform: capitalize;
+}
