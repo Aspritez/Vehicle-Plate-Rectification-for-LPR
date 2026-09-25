@@ -1,0 +1,8 @@
+[server]
+maxUploadSize = 10          # MB, matches the limit checked in streamlit_app.py
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"

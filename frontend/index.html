@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>License Plate Recognition System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="sheet">
+        <!-- Top bar -->
+        <header class="topbar">
+            <a class="brand" href="#">plate·id</a>
+            <span class="brand-sub">SIFT +<br>OCR</span>
+            <div class="steps-pills" aria-label="Pipeline steps">
+                <span class="pill">01 Locate</span>
+                <span class="pill">02 Straighten</span>
+                <span class="pill">03 Read</span>
+            </div>
+            <span class="health" id="healthPill" title="Backend status"><i class="dot"></i><span id="healthText">Checking backend…</span></span>
+            <svg class="nav-wave" viewBox="0 0 22 12" aria-hidden="true"><path d="M1 6 C4 0, 7 0, 11 6 S18 12, 21 6"></path></svg>
+            <button class="nav-cta" id="navUploadBtn" type="button">Upload image</button>
+        </header>
+
+        <main class="workspace">
+            <!-- Column 1: source + corner adjustment -->
+            <div class="col">
+                <section class="card card-source">
+                    <div class="card-head">
+                        <h2 class="card-title">Source</h2>
+                        <div class="input-tabs">
+                            <button class="tab-btn active" data-tab="image">Image</button>
+                            <button class="tab-btn" data-tab="webcam">Webcam</button>
+                            <button class="tab-btn" data-tab="url">Stream URL</button>
+                        </div>
+                    </div>
+
+                    <!-- Drag & Drop Zone -->
+                    <div class="drag-drop-zone" id="dragDropZone">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p class="drop-text">Drag & Drop Image or <span class="browse-link">Browse</span></p>
+                        <p class="drop-subtext">Supported: JPG, PNG, WEBP</p>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+
+                    <!-- Webcam Tab -->
+                    <div class="tab-content" id="webcam-tab" style="display: none;">
+                        <video id="webcamVideo" style="width: 100%; max-height: 150px; margin: 8px 0; border-radius: 12px;"></video>
+                        <button class="btn btn-primary btn-sm" id="captureBtn">Capture Frame</button>
+                    </div>
+
+                    <!-- URL Tab -->
+                    <div class="tab-content" id="url-tab" style="display: none;">
+                        <input type="text" id="streamUrl" placeholder="RTSP://... or HTTP://..." class="input-field">
+                        <button class="btn btn-primary btn-sm" id="streamBtn">Connect Stream</button>
+                    </div>
+                </section>
+
+                <!-- Manual Corner Adjustment -->
+                <section class="card card-corners" id="cornerCard">
+                    <div class="card-head">
+                        <h2 class="card-title">Corners</h2>
+                        <span class="card-hint">Draw a box around the plate, or drag corners 1&rarr;4</span>
+                    </div>
+                    <p class="card-description" id="cornerStatus">Upload an image, then draw a rough box around the plate to snap onto it.</p>
+
+                    <div class="canvas-wrap" id="cornerAdjustSection" style="display: none;">
+                        <canvas id="cornerCanvas"></canvas>
+                    </div>
+                    <p class="empty-note" id="cornerEmpty">No image yet</p>
+
+                    <div class="corner-actions">
+                        <label class="check" title="Use when the corners are only roughly placed">
+                            <input type="checkbox" id="snapCheckbox">
+                            <span>Snap to plate edges</span>
+                        </label>
+                        <div class="button-group">
+                            <button class="btn btn-secondary btn-sm" id="resetCornersBtn">Reset</button>
+                            <button class="btn btn-primary btn-sm" id="applyCornersBtn">Apply &amp; Re-recognize</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Column 2: pipeline inspector -->
+            <div class="col">
+                <section class="card card-pipeline">
+                    <div class="card-head">
+                        <h2 class="card-title">Pipeline</h2>
+                        <div class="pipeline-tabs">
+                            <button class="pipeline-tab active" data-step="original">Original</button>
+                            <button class="pipeline-tab" data-step="detected">Detected</button>
+                            <button class="pipeline-tab" data-step="deskewed">Deskewed</button>
+                            <button class="pipeline-tab" data-step="enhanced">Enhanced</button>
+                        </div>
+                    </div>
+                    <div class="pipeline-viewer">
+                        <img id="pipelineImage" src="" alt="Pipeline step" class="pipeline-img">
+                        <p id="pipelineInfo" class="pipeline-info">Upload an image to see pipeline steps</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Column 3: result -->
+            <div class="col">
+                <section class="card card-result" id="resultsCard">
+                    <div class="card-head">
+                        <h2 class="card-title">Result</h2>
+                        <span class="processing-time" id="processingCard" style="display: none;"><strong id="processingTime">0ms</strong></span>
+                    </div>
+
+                    <p class="empty-note" id="resultsEmpty">Upload an image to read a plate.</p>
+
+                    <div class="result-body" id="resultsBody" style="display: none;">
+                        <div class="result-display">
+                            <div class="plate-text-large" id="plateText">-</div>
+                            <p class="province-text" id="provinceText">-</p>
+                        </div>
+                        <div class="result-metrics">
+                            <div class="metric">
+                                <span class="metric-label">Confidence</span>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" id="confidenceFill"></div>
+                                </div>
+                                <span class="metric-value" id="confidenceValue">0%</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Status</span>
+                                <span class="status-badge" id="statusBadge">Valid</span>
+                            </div>
+                        </div>
+                        <p class="note" id="srNote" style="display: none;">Read from a super-resolved copy of the plate. Very blurry plates can be reconstructed with the wrong characters, so please check the text.</p>
+                        <div class="button-group">
+                            <button class="btn btn-secondary btn-sm" id="copyBtn">Copy Text</button>
+                            <button class="btn btn-secondary btn-sm" id="editBtn">Edit Manually</button>
+                        </div>
+                    </div>
+
+                    <ol class="steps">
+                        <li><span class="num">01</span><span><strong>Locate</strong> SIFT features find the plate; its corners snap to the edges.</span></li>
+                        <li><span class="num">02</span><span><strong>Straighten</strong> Perspective warp, then the text lines are levelled.</span></li>
+                        <li><span class="num">03</span><span><strong>Read</strong> Registration and province lines are read separately and checked against Thai plate rules.</span></li>
+                    </ol>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for manual edit -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2>Edit Plate Text</h2>
+            <input type="text" id="editInput" class="input-field" placeholder="Enter plate number">
+            <div class="button-group">
+                <button class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveEditBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api_client.js"></script>
+    <script src="js/canvas_viewer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
