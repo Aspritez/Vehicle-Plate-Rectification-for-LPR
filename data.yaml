@@ -1,6 +1,0 @@
-path: C:/CCTV - Detection/dataset
-train: train/images
-val: val/images
-
-names:
-  0: license_plate
