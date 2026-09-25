@@ -1,5 +1,5 @@
 class APIClient {
-    constructor(baseUrl = 'http://localhost:8000') {
+    constructor(baseUrl = '') {  // same origin as the page (works locally and when deployed)
         this.baseUrl = baseUrl;
     }
 

@@ -128,3 +128,22 @@ python train_locator.py --no-cv    # ข้าม cross-validation
 4. **fine-tune ตัวอ่านตัวอักษรไทย** ด้วยป้ายจริง + สังเคราะห์ ต้องการเฉลยตัวอักษรอย่างน้อยร้อยกว่าใบ (ไฟล์ CSV `ชื่อภาพ, ทะเบียน, จังหวัด` ก็พอ)
 5. ถ้ามีวิดีโอ/หลายเฟรม: จัดเรียงเฟรมด้วย SIFT/ECC แล้วซ้อนเพื่อเพิ่มความคมก่อน OCR (ผู้ใช้บอกว่าตอนนี้เป็นภาพเดี่ยว)
 6. เก็บกวาด: ลบ `sift_detector.py`/`test_pipeline.py`/เอกสารเก่า (ยังไม่ได้ลบ เพราะไม่มี git กู้คืนไม่ได้ — ให้ถามผู้ใช้ก่อน)
+
+## 10. Deploy และ Streamlit (อัปเดต 2026-09-25)
+
+**Branch ที่เกี่ยวข้อง:** `phet` (ขึ้น GitHub แล้ว; `main` บน GitHub รับรุ่นแรกไปแล้วผ่าน PR #7 ส่วน Streamlit ตามไปทาง PR ใหม่จาก `phet`) · `hf` (เตรียม Docker/Hugging Face: `Dockerfile`, `DEPLOY_HF.md`, ใช้ Git LFS) · `streamlit` (แอป Streamlit + `pipeline.py`) · `streamlit-clean` (สแนปช็อตของ `streamlit` 1 commit ไม่มีประวัติ ไว้ push ขึ้น repo ใหม่ ประวัติของ branch อื่นมี dataset 205 MB ปนอยู่)
+
+**เหตุผลที่เลือก Streamlit Cloud:** Hugging Face Spaces แบบ Docker/Gradio ต้องแผนเสียเงิน (PRO $9/เดือน) บัญชีฟรีสร้างได้แค่ Static (ไม่มี backend) · Azure for Students ($100 เครดิต ไม่ต้องใช้บัตร ต้องอีเมลมหาวิทยาลัย) เป็นอีกทางถ้า Streamlit ไม่พอ · Streamlit Community Cloud: RAM สูงสุด 2.7 GB, CPU 2 คอร์, หลับหลังไม่มีคนเข้า 12 ชม. (ตัวเลขนี้ผมเคยบอกผิดว่า ~1 GB)
+
+**โครงสร้างโค้ดหลังแยก:** ตรรกะอ่านป้ายทั้งหมดอยู่ที่ [backend/app/pipeline.py](backend/app/pipeline.py) (`PlateReader`: `recognize`, `recognize_box`, `recognize_corners`, มี lock ประมวลผลทีละคำขอ) · FastAPI ([routes.py](backend/app/api/routes.py)) กับ Streamlit ([streamlit_app.py](streamlit_app.py)) เป็นแค่ตัวห่อ · ผลลัพธ์ของ pipeline เป็น numpy (`result["images"]`) routes แปลงเป็น base64 เอง
+
+**ตัวหาป้ายลดขนาด:** `train_locator.py --trees 100` (ค่าเริ่มต้น) ไฟล์ 84 MB (จาก 143 MB) ความแม่น CV 32% เทียบ 34% (ในระดับสัญญาณรบกวน, 44 ภาพ) ไฟล์ < 100 MB จึงขึ้น GitHub ตรงๆ ได้ (ไม่ต้อง LFS ซึ่ง Streamlit Cloud รองรับไม่ดี)
+
+**RAM (CPU ล้วน, Windows):** โหลดโมเดล ~1.4 GB → ใช้งานต่อเนื่อง ~2.2 GB คงที่ (ไม่ leak) → รวม Streamlit peak ~2.35 GB (เพดาน 2.7 GB) `PLATE_DISABLE_SR=1` ปิด Super-resolution ประหยัด ~0.5 GB
+
+**Streamlit app:** อัปโหลด/ภาพตัวอย่าง (`samples/`) → หาป้ายอัตโนมัติ → วาดกรอบด้วย `streamlit-image-coordinates` (`click_and_drag=True`, `width="stretch"`; พิกัดที่คืนมาต้องชดเชยขนาดที่แสดง) หรือพิมพ์ 4 มุม ไม่มีการลากมุมแบบหน้าเว็บเดิม · `streamlit-drawable-canvas` ตัวดั้งเดิมพังกับ Streamlit รุ่นใหม่ จึงไม่ใช้ · ทดสอบแล้ว: Car433 → `กด 3789` เพชรบุรี, Car435 วาดกรอบ → `กฎ 4644`
+- ต้องรัน Streamlit ด้วย `--server.address=127.0.0.1` ตอนทดสอบ ไม่งั้นเปิดให้ทั้งเครือข่ายเข้าได้
+
+**Docker:** image ของ Space (`Dockerfile`) build สำเร็จและรันผ่านจริง (health, อ่านป้าย, RAM 1.2 GB) · เหตุการณ์ 2026-09-25: ไดรฟ์ C: เต็ม 100% จากพื้นที่ Docker 15 GB ทำให้ Docker Desktop พัง (`input/output error`) ผู้ใช้ล้างพื้นที่แล้ว แต่ engine ยังตอบ 500 ต้องรีสตาร์ต/Purge เอง · **ก่อน build image ใหญ่ให้เช็กพื้นที่ว่างก่อน**
+
+**ยังไม่ได้ทำ/ยังไม่ยืนยัน:** deploy จริงบน Streamlit Cloud (ยังไม่ทราบว่าตัวติดตั้งจะเลือก torch แบบ CPU ตาม `--extra-index-url` หรือไม่ ดูวิธีแก้ใน [DEPLOY_STREAMLIT.md](DEPLOY_STREAMLIT.md)) · ทดสอบใน Docker ที่จำกัด RAM 2.7 GB (Docker เสีย)

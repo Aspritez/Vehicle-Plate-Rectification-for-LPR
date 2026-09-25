@@ -9,6 +9,7 @@ Caveat: this is a generative model. On mildly blurry plates it restores real str
 extremely low-resolution plates it invents plausible-looking glyphs, so its output should only
 be preferred when OCR is clearly more confident with it.
 """
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -79,7 +80,9 @@ class SuperResolver:
 
     @property
     def available(self) -> bool:
-        return self.weights_path.exists()
+        """Set the environment variable PLATE_DISABLE_SR=1 to switch super-resolution off (saves ~0.5 GB of
+        RAM on small hosts); without the weights file it is off as well."""
+        return os.environ.get("PLATE_DISABLE_SR") != "1" and self.weights_path.exists()
 
     def _load(self) -> _RRDBNet:
         if self._net is None:
