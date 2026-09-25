@@ -1,0 +1,10 @@
+.git
+.claude
+data
+X-AnyLabeling
+X-AnyLabeling-CUDA13.exe
+*.log
+__pycache__
+*.pyc
+*.md
+!README.md

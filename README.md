@@ -1,5 +1,7 @@
 # License Plate Recognition System
 
+> **Streamlit version:** `streamlit run streamlit_app.py` · deployment guide: [DEPLOY_STREAMLIT.md](DEPLOY_STREAMLIT.md) · how it works: [HOW_IT_WORKS.md](HOW_IT_WORKS.md)
+
 Thai License Plate Detection & Recognition using SIFT + Homography + OCR
 
 ## Features

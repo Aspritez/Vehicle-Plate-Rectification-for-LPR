@@ -35,9 +35,6 @@ output_*.jpg
 X-AnyLabeling/
 X-AnyLabeling-CUDA13.exe
 
-# large binaries: regenerate/download instead (see context.md)
-backend/app/models/*.joblib
-backend/app/models/*.pth
 
 # dataset images (keep out of git; labels are small but useless without the images)
 data/
@@ -46,3 +43,4 @@ data/
 .claude/
 server.log
 server.log.err
+*.log.err
